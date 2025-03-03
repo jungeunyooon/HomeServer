@@ -1,0 +1,28 @@
+version: "3.8"
+
+services:
+  # Traefik 컨테이너
+  traefik:
+    image: traefik:v2.9
+    container_name: traefik
+    command:
+      - "--api.insecure=true"            # (테스트용) 대시보드 활성화
+      - "--providers.docker=true"        # Docker 레이블 기반 설정
+      - "--entrypoints.web.address=:80"  # HTTP 80번 포트 수신
+    ports:
+      - "80:80"      # 호스트의 80 → 컨테이너 80
+      - "8080:8080"  # 대시보드(테스트용)
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+
+  # 간단 테스트용 컨테이너 (Traefik 공식 whoami 이미지)
+  whoami:
+    image: traefik/whoami
+    container_name: whoami
+    labels:
+      - "traefik.enable=true"
+      # 라우팅 규칙: 모든 요청(PathPrefix(`/`))을 whoami 컨테이너로 보냄
+      - "traefik.http.routers.whoami.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.whoami.entrypoints=web"
+    restart: unless-stopped
